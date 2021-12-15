@@ -293,8 +293,13 @@ func (v Value) MarshalJSON() ([]byte, error) {
 	return json.Marshal(hex.EncodeToString(v))
 }
 
-// Migration defines how to convert the given slice of input payloads into an slice of output payloads
-type Migration func(payloads []Payload) ([]Payload, error)
+// Migration defines how to convert the given slice of input payloads into a slice of output payloads
+type Migration interface {
+	// Name returns the name of the migration. Only used for logging.
+	Name() string
+	// Migrate accepts slice ledger payloads and converts them into a slice of output payloads
+	Migrate(payloads []Payload) ([]Payload, error)
+}
 
 // Reporter reports on data from the state
 type Reporter interface {

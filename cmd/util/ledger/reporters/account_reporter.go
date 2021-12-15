@@ -5,14 +5,13 @@ import (
 	goRuntime "runtime"
 	"sync"
 
-	"github.com/rs/zerolog"
-	"github.com/schollz/progressbar/v3"
-
 	"github.com/onflow/cadence"
 	jsoncdc "github.com/onflow/cadence/encoding/json"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/cadence/runtime/interpreter"
+	"github.com/rs/zerolog"
 
+	lc "github.com/onflow/flow-go/cmd/util/ledger/common"
 	"github.com/onflow/flow-go/cmd/util/ledger/migrations"
 	"github.com/onflow/flow-go/fvm"
 	"github.com/onflow/flow-go/fvm/programs"
@@ -68,12 +67,12 @@ func (r *AccountReporter) Report(payload []ledger.Payload) error {
 	sth := state.NewStateHolder(st)
 	gen := state.NewStateBoundAddressGenerator(sth, r.Chain)
 
-	progress := progressbar.Default(int64(gen.AddressCount()), "Processing:")
+	progress := lc.NewProgressBar(r.Log, int64(gen.AddressCount()), "Processing:")
 
 	addressIndexes := make(chan uint64)
 	wg := &sync.WaitGroup{}
 
-	workerCount := goRuntime.NumCPU() / 2
+	workerCount := goRuntime.NumCPU()
 	if workerCount == 0 {
 		workerCount = 1
 	}
@@ -87,20 +86,13 @@ func (r *AccountReporter) Report(payload []ledger.Payload) error {
 	for i := uint64(1); i <= gen.AddressCount(); i++ {
 		addressIndexes <- i
 
-		err := progress.Add(1)
-		if err != nil {
-			panic(err)
-		}
+		progress.Increment()
 	}
 	close(addressIndexes)
 
 	wg.Wait()
 
-	err := progress.Finish()
-	if err != nil {
-		panic(err)
-	}
-
+	progress.Finish()
 	return nil
 }
 

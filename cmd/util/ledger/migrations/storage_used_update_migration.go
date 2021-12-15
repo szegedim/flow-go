@@ -3,6 +3,7 @@ package migrations
 import (
 	"bufio"
 	"fmt"
+	"github.com/onflow/flow-go/cmd/util/ledger/common"
 	"os"
 	"path"
 	"runtime"
@@ -38,8 +39,14 @@ type StorageUsedUpdateMigration struct {
 	OutputDir string
 }
 
+var _ ledger.Migration = &StorageUsedUpdateMigration{}
+
 func (m *StorageUsedUpdateMigration) filename() string {
 	return path.Join(m.OutputDir, fmt.Sprintf("storage_used_update_%d.csv", int32(time.Now().Unix())))
+}
+
+func (m *StorageUsedUpdateMigration) Name() string {
+	return "Storage Used Update Migration"
 }
 
 // iterates through registers keeping a map of register sizes
@@ -75,6 +82,8 @@ func (m *StorageUsedUpdateMigration) Migrate(payload []ledger.Payload) ([]ledger
 	payloadChan := make(chan indexedPayload)
 	storageUsedPayloadChan := make(chan accountStorageUsedPayload, workerCount)
 	storageUsedPayload := make(map[string]int)
+
+	progressbar := common.NewProgressBar(m.Log, int64(len(payload)), "Getting storage used")
 
 	inputWG := &sync.WaitGroup{}
 	outputWG := &sync.WaitGroup{}
@@ -126,6 +135,7 @@ func (m *StorageUsedUpdateMigration) Migrate(payload []ledger.Payload) ([]ledger
 					Address:     id.Owner,
 					StorageUsed: uint64(registerSize(id, p.Payload)),
 				}
+				progressbar.Increment()
 			}
 			inputWG.Done()
 		}()
@@ -153,6 +163,8 @@ func (m *StorageUsedUpdateMigration) Migrate(payload []ledger.Payload) ([]ledger
 		log.Error().Int("accounts", len(storageUsed)).Int("storageUsedPayloads", len(storageUsedPayload)).Msg(errStr)
 		return nil, fmt.Errorf(errStr)
 	}
+	progressbar.Finish()
+	progressbar = common.NewProgressBar(m.Log, int64(len(storageUsedPayload)), "Updating storage used")
 
 	var change int64
 	storageIncreaseCount := 0
@@ -205,6 +217,7 @@ func (m *StorageUsedUpdateMigration) Migrate(payload []ledger.Payload) ([]ledger
 		}
 
 		payload[pIndex].Value = utils.Uint64ToBinary(used)
+		progressbar.Increment()
 	}
 
 	m.Log.Info().

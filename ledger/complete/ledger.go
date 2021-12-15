@@ -277,92 +277,137 @@ func (l *Ledger) ExportCheckpointAt(
 
 	// get all payloads
 	payloads := t.AllPayloads()
-	payloadSize := len(payloads)
 
-	// migrate payloads
-	for i, migrate := range migrations {
-		l.logger.Info().Msgf("migration %d is underway", i)
-
-		start := time.Now()
-		payloads, err = migrate(payloads)
-		elapsed := time.Since(start)
-
-		if err != nil {
-			return ledger.State(hash.DummyHash), fmt.Errorf("error applying migration (%d): %w", i, err)
-		}
-
-		newPayloadSize := len(payloads)
-
-		if payloadSize != newPayloadSize {
-			l.logger.Warn().
-				Int("migration_step", i).
-				Int("expected_size", payloadSize).
-				Int("outcome_size", newPayloadSize).
-				Msg("payload counts has changed during migration, make sure this is expected.")
-		}
-		l.logger.Info().Str("timeTaken", elapsed.String()).Msgf("migration %d is done", i)
-
-		payloadSize = newPayloadSize
+	payloads, err = l.runMigrations(payloads, migrations)
+	if err != nil {
+		return ledger.State(hash.DummyHash), fmt.Errorf("error running migrations: %w", err)
 	}
 
-	// run reporters
-	for _, reporter := range reporters {
-		l.logger.Info().
-			Str("name", reporter.Name()).
-			Msg("starting reporter")
-
-		start := time.Now()
-		err = reporter.Report(payloads)
-		elapsed := time.Since(start)
-
-		l.logger.Info().
-			Str("timeTaken", elapsed.String()).
-			Str("name", reporter.Name()).
-			Msg("reporter done")
-		if err != nil {
-			return ledger.State(hash.DummyHash),
-				fmt.Errorf("error running reporter (%s): %w", reporter.Name(), err)
-		}
+	newTrie, err := l.constructNewTrie(payloads, targetPathFinderVersion, outputDir, outputFile)
+	if err != nil {
+		return ledger.State(hash.DummyHash), fmt.Errorf("error constructiong new trie: %w", err)
 	}
 
+	err = l.runReporters(payloads, reporters)
+	if err != nil {
+		return ledger.State(hash.DummyHash), fmt.Errorf("error running reporters: %w", err)
+	}
+
+	return ledger.State(newTrie.RootHash()), nil
+}
+
+func (l *Ledger) constructNewTrie(payloads []ledger.Payload, targetPathFinderVersion uint8, outputDir string, outputFile string) (*trie.MTrie, error) {
 	l.logger.Info().Msgf("constructing a new trie with migrated payloads (count: %d)...", len(payloads))
 
 	// get paths
 	paths, err := pathfinder.PathsFromPayloads(payloads, targetPathFinderVersion)
 	if err != nil {
-		return ledger.State(hash.DummyHash), fmt.Errorf("cannot export checkpoint, can't construct paths: %w", err)
+		return nil, fmt.Errorf("cannot export checkpoint, can't construct paths: %w", err)
 	}
 
 	emptyTrie := trie.NewEmptyMTrie()
 
-	// no need to prune the data since it has already been prunned through migrations
+	// no need to prune the data since it has already been pruned through migrations
 	applyPruning := false
 	newTrie, err := trie.NewTrieWithUpdatedRegisters(emptyTrie, paths, payloads, applyPruning)
 	if err != nil {
-		return ledger.State(hash.DummyHash), fmt.Errorf("constructing updated trie failed: %w", err)
+		return nil, fmt.Errorf("constructing updated trie failed: %w", err)
 	}
 
 	l.logger.Info().Msg("creating a checkpoint for the new trie")
 
 	writer, err := wal.CreateCheckpointWriterForFile(outputDir, outputFile)
 	if err != nil {
-		return ledger.State(hash.DummyHash), fmt.Errorf("failed to create a checkpoint writer: %w", err)
+		return nil, fmt.Errorf("failed to create a checkpoint writer: %w", err)
 	}
 
 	flatTrie, err := flattener.FlattenTrie(newTrie)
 	if err != nil {
-		return ledger.State(hash.DummyHash), fmt.Errorf("failed to flatten the trie: %w", err)
+		return nil, fmt.Errorf("failed to flatten the trie: %w", err)
 	}
 
 	l.logger.Info().Msg("storing the checkpoint to the file")
 
 	err = wal.StoreCheckpoint(flatTrie.ToFlattenedForestWithASingleTrie(), writer)
 	if err != nil {
-		return ledger.State(hash.DummyHash), fmt.Errorf("failed to store the checkpoint: %w", err)
+		return nil, fmt.Errorf("failed to store the checkpoint: %w", err)
 	}
-	writer.Close()
+	err = writer.Close()
+	return newTrie, err
+}
 
-	return ledger.State(newTrie.RootHash()), nil
+func (l *Ledger) runReporters(
+	payloads []ledger.Payload,
+	reporters []ledger.Reporter,
+) error {
+	for i, reporter := range reporters {
+		rl := l.logger.With().
+			Str("name", reporter.Name()).
+			Int("reporters", i+1).
+			Int("totalReporters", len(reporters)).
+			Logger()
+
+		rl.Info().
+			Msg("starting reporter")
+
+		start := time.Now()
+		err := reporter.Report(payloads)
+		elapsed := time.Since(start)
+
+		if err != nil {
+			return fmt.Errorf("error running reporter (%s): %w", reporter.Name(), err)
+		}
+
+		rl.Info().
+			Str("timeTaken", elapsed.String()).
+			Msg("reporter done")
+	}
+	return nil
+}
+
+func (l *Ledger) runMigrations(
+	payloads []ledger.Payload,
+	migrations []ledger.Migration,
+) (
+	[]ledger.Payload,
+	error,
+) {
+	payloadSize := len(payloads)
+	// migrate payloads
+	for i, migrator := range migrations {
+		ml := l.logger.With().
+			Str("name", migrator.Name()).
+			Int("migration", i+1).
+			Int("totalMigrations", len(migrations)).
+			Logger()
+
+		ml.Info().Msg("migration is underway")
+
+		start := time.Now()
+		payloads, err := migrator.Migrate(payloads)
+		elapsed := time.Since(start)
+
+		if err != nil {
+			return nil,
+				fmt.Errorf("error applying migration (%s): %w", migrator.Name(), err)
+		}
+
+		newPayloadSize := len(payloads)
+
+		if payloadSize != newPayloadSize {
+			ml.Warn().
+				Int("expected_size", payloadSize).
+				Int("outcome_size", newPayloadSize).
+				Msg("payload counts has changed during migration, make sure this is expected.")
+		}
+		ml.Info().
+			Str("timeTaken", elapsed.String()).
+			Msg("migration is done")
+
+		payloadSize = newPayloadSize
+	}
+
+	return payloads, nil
 }
 
 // MostRecentTouchedState returns a state which is most recently touched.

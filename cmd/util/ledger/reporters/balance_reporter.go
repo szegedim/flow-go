@@ -7,15 +7,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rs/zerolog"
-	"github.com/schollz/progressbar/v3"
-
 	"github.com/onflow/atree"
+	"github.com/rs/zerolog"
 
 	cadenceRuntime "github.com/onflow/cadence/runtime"
 	"github.com/onflow/cadence/runtime/common"
 	"github.com/onflow/cadence/runtime/interpreter"
 
+	lc "github.com/onflow/flow-go/cmd/util/ledger/common"
 	"github.com/onflow/flow-go/cmd/util/ledger/migrations"
 	"github.com/onflow/flow-go/fvm"
 	"github.com/onflow/flow-go/fvm/state"
@@ -29,7 +28,7 @@ type BalanceReporter struct {
 	RWF         ReportWriterFactory
 	Chain       flow.Chain
 	rw          ReportWriter
-	progress    *progressbar.ProgressBar
+	progress    *lc.ProgressBar
 	vaultTypeID string
 }
 
@@ -56,7 +55,7 @@ func (r *BalanceReporter) Report(payload []ledger.Payload) error {
 	r.rw = r.RWF.ReportWriter("balance_report")
 	defer r.rw.Close()
 
-	r.progress = progressbar.Default(int64(len(payload)), "Processing:")
+	r.progress = lc.NewProgressBar(r.Log, int64(len(payload)), "Processing:")
 	r.vaultTypeID = fmt.Sprintf("A.%s.FlowToken.Vault", fvm.FlowTokenAddress(r.Chain).Hex())
 
 	l := migrations.NewView(payload)
@@ -77,10 +76,7 @@ func (r *BalanceReporter) Report(payload []ledger.Payload) error {
 	close(jobs)
 	wg.Wait()
 
-	err := r.progress.Finish()
-	if err != nil {
-		panic(err)
-	}
+	r.progress.Finish()
 
 	return nil
 }
@@ -102,10 +98,7 @@ func (r *BalanceReporter) balanceReporterWorker(
 	for payload := range jobs {
 		r.handlePayload(payload, storage)
 
-		err := r.progress.Add(1)
-		if err != nil {
-			panic(err)
-		}
+		r.progress.Increment()
 	}
 
 	wg.Done()
