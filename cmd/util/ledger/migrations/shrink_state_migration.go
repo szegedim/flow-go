@@ -6,6 +6,7 @@ import (
 	"github.com/onflow/flow-go/ledger"
 	"github.com/onflow/flow-go/model/flow"
 	"github.com/rs/zerolog"
+	"math"
 	"runtime"
 	"sync"
 )
@@ -25,7 +26,7 @@ var _ ledger.Migration = &ShrinkStateMigration{}
 func (m *ShrinkStateMigration) Migrate(payloads []ledger.Payload) ([]ledger.Payload, error) {
 
 	l := NewView(payloads)
-	st := state.NewState(l)
+	st := state.NewState(l, state.WithMaxInteractionSizeAllowed(math.MaxUint64))
 	sth := state.NewStateHolder(st)
 	gen := state.NewStateBoundAddressGenerator(sth, m.Chain)
 
@@ -92,7 +93,7 @@ func (m *ShrinkStateMigration) Migrate(payloads []ledger.Payload) ([]ledger.Payl
 
 func (m *ShrinkStateMigration) accountFilter(wg *sync.WaitGroup, view *view, indexes <-chan uint64, filteredAddresses chan<- flow.Address) {
 	v := view.NewChild()
-	st := state.NewState(v)
+	st := state.NewState(v, state.WithMaxInteractionSizeAllowed(math.MaxUint64))
 	sth := state.NewStateHolder(st)
 	accounts := state.NewAccounts(sth)
 
