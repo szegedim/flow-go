@@ -67,6 +67,10 @@ func extractExecutionState(
 				OutputDir: outputDir,
 			},
 			&mgr.PruneMigration{},
+			&mgr.ShrinkStateMigration{
+				Log:   log,
+				Chain: chain,
+			},
 		}
 	}
 	if report {
