@@ -2,12 +2,12 @@ package reporters
 
 import (
 	"fmt"
-	"github.com/onflow/flow-go/fvm/state"
 
 	"github.com/rs/zerolog"
 
 	"github.com/onflow/flow-core-contracts/lib/go/templates"
 
+	"github.com/onflow/flow-go/cmd/util/ledger/migrations"
 	"github.com/onflow/flow-go/fvm"
 	"github.com/onflow/flow-go/fvm/programs"
 	"github.com/onflow/flow-go/fvm/systemcontracts"
@@ -25,7 +25,8 @@ func (e *EpochCounterReporter) Name() string {
 	return "EpochCounterReporter"
 }
 
-func (e *EpochCounterReporter) Report(payload []ledger.Payload, l state.View) error {
+func (e *EpochCounterReporter) Report(payload []ledger.Payload) error {
+	l := migrations.NewView(payload)
 	prog := programs.NewEmptyPrograms()
 	vm := fvm.NewVirtualMachine(fvm.NewInterpreterRuntime())
 	ctx := fvm.NewContext(zerolog.Nop(), fvm.WithChain(e.Chain))
