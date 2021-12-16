@@ -37,6 +37,8 @@ func (r *BalanceReporter) Name() string {
 	return "Balance Reporter"
 }
 
+const storagePathSeparator = "\x1f"
+
 type balanceDataPoint struct {
 	// Path is the storage path of the composite the vault was found in
 	Path string `json:"path"`
@@ -115,9 +117,11 @@ func (r *BalanceReporter) handlePayload(p ledger.Payload, storage *cadenceRuntim
 	if state.IsFVMStateKey(id.Owner, id.Controller, id.Key) {
 		return
 	}
-	if !(strings.HasPrefix(id.Key, common.PathDomainPublic.Identifier()) ||
-		strings.HasPrefix(id.Key, common.PathDomainPrivate.Identifier()) ||
-		strings.HasPrefix(id.Key, common.PathDomainStorage.Identifier())) {
+	keyParts := strings.SplitN(id.Key, storagePathSeparator, 2)
+
+	if len(keyParts) != 2 || !(id.Key == common.PathDomainPublic.Identifier() ||
+		id.Key == common.PathDomainPrivate.Identifier() ||
+		id.Key == common.PathDomainStorage.Identifier()) {
 		// this is not a storage path
 		return
 	}
