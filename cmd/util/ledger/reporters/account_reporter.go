@@ -62,7 +62,7 @@ func (r *AccountReporter) Report(payload []ledger.Payload) (err error) {
 
 	defer func() {
 		r := recover()
-		if r != nil {
+		if r == nil {
 			rwa.Close()
 			rwc.Close()
 			rwm.Close()
