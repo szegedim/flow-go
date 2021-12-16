@@ -115,8 +115,8 @@ func (r *BalanceReporter) handlePayload(p ledger.Payload, storage *cadenceRuntim
 	if state.IsFVMStateKey(id.Owner, id.Controller, id.Key) {
 		return
 	}
-	if !(strings.HasPrefix(id.Key, common.PathDomainPublic.Identifier()) &&
-		strings.HasPrefix(id.Key, common.PathDomainPrivate.Identifier()) &&
+	if !(strings.HasPrefix(id.Key, common.PathDomainPublic.Identifier()) ||
+		strings.HasPrefix(id.Key, common.PathDomainPrivate.Identifier()) ||
 		strings.HasPrefix(id.Key, common.PathDomainStorage.Identifier())) {
 		// this is not a storage path
 		return
