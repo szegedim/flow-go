@@ -95,3 +95,10 @@ func (a *AccountsAtreeLedger) AllocateStorageIndex(owner []byte) (atree.StorageI
 	}
 	return v, nil
 }
+
+func registerSize(id flow.RegisterID, p ledger.Payload) int {
+	address := flow.BytesToAddress([]byte(id.Owner))
+	isController := len(id.Controller) > 0
+	key := id.Key
+	return fvmState.RegisterSize(address, isController, key, p.Value)
+}

@@ -2,6 +2,7 @@ package reporters
 
 import (
 	"fmt"
+	"math"
 	goRuntime "runtime"
 	"sync"
 
@@ -54,16 +55,28 @@ type momentsRecord struct {
 	Moments int    `json:"moments"`
 }
 
-func (r *AccountReporter) Report(payload []ledger.Payload) error {
+func (r *AccountReporter) Report(payload []ledger.Payload) (err error) {
 	rwa := r.RWF.ReportWriter("account_report")
 	rwc := r.RWF.ReportWriter("contract_report")
 	rwm := r.RWF.ReportWriter("moments_report")
-	defer rwa.Close()
-	defer rwc.Close()
-	defer rwm.Close()
+
+	defer func() {
+		r := recover()
+		if r != nil {
+			rwa.Close()
+			rwc.Close()
+			rwm.Close()
+			return
+		}
+		if e, ok := r.(error); ok {
+			err = e
+		} else {
+			panic(r)
+		}
+	}()
 
 	l := migrations.NewView(payload)
-	st := state.NewState(l)
+	st := state.NewState(l, state.WithMaxInteractionSizeAllowed(math.MaxUint64))
 	sth := state.NewStateHolder(st)
 	gen := state.NewStateBoundAddressGenerator(sth, r.Chain)
 
@@ -162,7 +175,7 @@ func newAccountDataProcessor(wg *sync.WaitGroup, logger zerolog.Logger, rwa Repo
 			`)
 
 	v := view.NewChild()
-	st := state.NewState(v)
+	st := state.NewState(v, state.WithMaxInteractionSizeAllowed(math.MaxUint64))
 	sth := state.NewStateHolder(st)
 	accounts := state.NewAccounts(sth)
 

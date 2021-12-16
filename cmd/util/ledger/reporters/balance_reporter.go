@@ -2,6 +2,7 @@ package reporters
 
 import (
 	"fmt"
+	"math"
 	"runtime"
 	"strings"
 	"sync"
@@ -85,7 +86,7 @@ func (r *BalanceReporter) balanceReporterWorker(
 	l state.View,
 	jobs <-chan ledger.Payload,
 	wg *sync.WaitGroup) {
-	st := state.NewState(l)
+	st := state.NewState(l, state.WithMaxInteractionSizeAllowed(math.MaxUint64))
 	sth := state.NewStateHolder(st)
 	accounts := state.NewAccounts(sth)
 	storage := cadenceRuntime.NewStorage(

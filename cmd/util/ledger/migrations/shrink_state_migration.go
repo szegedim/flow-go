@@ -10,6 +10,7 @@ import (
 	"sync"
 )
 
+// ShrinkStateMigration is a migration that shrinks the state, so that it can be more manageable to be used in tests.
 type ShrinkStateMigration struct {
 	Chain flow.Chain
 	Log   zerolog.Logger
@@ -112,6 +113,8 @@ func (m *ShrinkStateMigration) accountFilter(wg *sync.WaitGroup, view *view, ind
 				Msgf("Error getting address contracts")
 			return false, address
 		}
+
+		// Condition 1. keep all accounts that have contracts
 		if len(contracts) > 0 {
 			return true, address
 		}

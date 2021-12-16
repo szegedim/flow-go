@@ -283,14 +283,14 @@ func (l *Ledger) ExportCheckpointAt(
 		return ledger.State(hash.DummyHash), fmt.Errorf("error running migrations: %w", err)
 	}
 
-	newTrie, err := l.constructNewTrie(payloads, targetPathFinderVersion, outputDir, outputFile)
-	if err != nil {
-		return ledger.State(hash.DummyHash), fmt.Errorf("error constructiong new trie: %w", err)
-	}
-
 	err = l.runReporters(payloads, reporters)
 	if err != nil {
 		return ledger.State(hash.DummyHash), fmt.Errorf("error running reporters: %w", err)
+	}
+
+	newTrie, err := l.constructNewTrie(payloads, targetPathFinderVersion, outputDir, outputFile)
+	if err != nil {
+		return ledger.State(hash.DummyHash), fmt.Errorf("error constructiong new trie: %w", err)
 	}
 
 	return ledger.State(newTrie.RootHash()), nil
