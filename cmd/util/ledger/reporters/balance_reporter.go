@@ -119,9 +119,9 @@ func (r *BalanceReporter) handlePayload(p ledger.Payload, storage *cadenceRuntim
 	}
 	keyParts := strings.SplitN(id.Key, storagePathSeparator, 2)
 
-	if len(keyParts) != 2 || !(id.Key == common.PathDomainPublic.Identifier() ||
-		id.Key == common.PathDomainPrivate.Identifier() ||
-		id.Key == common.PathDomainStorage.Identifier()) {
+	if !(len(keyParts) == 2 && (keyParts[0] == common.PathDomainPublic.Identifier() ||
+		keyParts[0] == common.PathDomainPrivate.Identifier() ||
+		keyParts[0] == common.PathDomainStorage.Identifier())) {
 		// this is not a storage path
 		return
 	}
