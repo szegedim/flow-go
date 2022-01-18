@@ -248,10 +248,10 @@ func (h *AccountKeyHandler) GetAccountKey(address runtime.Address, keyIndex int)
 // This function returns following error
 // * NewAccountNotFoundError - if the specified account does not exist
 // * ValueError - if the provided encodedPublicKey is not valid public key
-func (e *AccountKeyHandler) AddEncodedAccountKey(address runtime.Address, encodedPublicKey []byte) (err error) {
+func (h *AccountKeyHandler) AddEncodedAccountKey(address runtime.Address, encodedPublicKey []byte) (err error) {
 	accountAddress := flow.Address(address)
 
-	ok, err := e.accounts.Exists(accountAddress)
+	ok, err := h.accounts.Exists(accountAddress)
 	if err != nil {
 		return fmt.Errorf("adding encoded account key failed: %w", err)
 	}
@@ -269,7 +269,7 @@ func (e *AccountKeyHandler) AddEncodedAccountKey(address runtime.Address, encode
 		return fmt.Errorf("adding encoded account key failed: %w", err)
 	}
 
-	err = e.accounts.AppendPublicKey(accountAddress, publicKey)
+	err = h.accounts.AppendPublicKey(accountAddress, publicKey)
 	if err != nil {
 		return fmt.Errorf("adding encoded account key failed: %w", err)
 	}
@@ -281,10 +281,10 @@ func (e *AccountKeyHandler) AddEncodedAccountKey(address runtime.Address, encode
 //
 // This function returns an error if the specified account does not exist, the
 // provided key is invalid, or if key revoking fails.
-func (e *AccountKeyHandler) RemoveAccountKey(address runtime.Address, keyIndex int) (encodedPublicKey []byte, err error) {
+func (h *AccountKeyHandler) RemoveAccountKey(address runtime.Address, keyIndex int) (encodedPublicKey []byte, err error) {
 	accountAddress := flow.Address(address)
 
-	ok, err := e.accounts.Exists(accountAddress)
+	ok, err := h.accounts.Exists(accountAddress)
 	if err != nil {
 		return nil, fmt.Errorf("remove account key failed: %w", err)
 	}
@@ -300,7 +300,7 @@ func (e *AccountKeyHandler) RemoveAccountKey(address runtime.Address, keyIndex i
 	}
 
 	var publicKey flow.AccountPublicKey
-	publicKey, err = e.accounts.GetPublicKey(accountAddress, uint64(keyIndex))
+	publicKey, err = h.accounts.GetPublicKey(accountAddress, uint64(keyIndex))
 	if err != nil {
 		return nil, fmt.Errorf("remove account key failed: %w", err)
 	}
@@ -308,7 +308,7 @@ func (e *AccountKeyHandler) RemoveAccountKey(address runtime.Address, keyIndex i
 	// mark this key as revoked
 	publicKey.Revoked = true
 
-	encodedPublicKey, err = e.accounts.SetPublicKey(accountAddress, uint64(keyIndex), publicKey)
+	encodedPublicKey, err = h.accounts.SetPublicKey(accountAddress, uint64(keyIndex), publicKey)
 	if err != nil {
 		return nil, fmt.Errorf("remove account key failed: %w", err)
 	}

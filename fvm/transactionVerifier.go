@@ -56,7 +56,7 @@ func (v *TransactionSignatureVerifier) verifyTransactionSignatures(
 	}
 
 	tx := proc.Transaction
-	accounts := state.NewAccounts(sth)
+	accounts := sth.Accounts()
 	if tx.Payer == flow.EmptyAddress {
 		err := errors.NewInvalidAddressErrorf(tx.Payer, "payer address is invalid")
 		return fmt.Errorf("transaction verification failed: %w", err)

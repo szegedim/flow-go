@@ -98,7 +98,7 @@ func run(*cobra.Command, []string) {
 	})
 
 	sth := state.NewStateHolder(state.NewState(ldg))
-	accounts := state.NewAccounts(sth)
+	accounts := sth.Accounts()
 	finalGenerator := state.NewStateBoundAddressGenerator(sth, chain)
 	finalState := finalGenerator.Bytes()
 

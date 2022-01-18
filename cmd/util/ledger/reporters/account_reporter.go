@@ -172,7 +172,7 @@ func newAccountDataProcessor(wg *sync.WaitGroup, logger zerolog.Logger, rwa Repo
 	v := view.NewChild()
 	st := state.NewState(v)
 	sth := state.NewStateHolder(st)
-	accounts := state.NewAccounts(sth)
+	accounts := sth.Accounts()
 
 	return &balanceProcessor{
 		wg:            wg,

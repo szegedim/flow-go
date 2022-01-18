@@ -175,7 +175,7 @@ func (b *BootstrapProcedure) Run(vm *VirtualMachine, ctx Context, sth *state.Sta
 	b.programs = programs
 
 	// initialize the account addressing state
-	b.accounts = state.NewAccounts(b.sth)
+	b.accounts = sth.Accounts()
 	addressGenerator := state.NewStateBoundAddressGenerator(b.sth, ctx.Chain)
 	b.addressGenerator = addressGenerator
 

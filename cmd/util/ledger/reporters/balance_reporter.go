@@ -91,7 +91,7 @@ func (r *BalanceReporter) balanceReporterWorker(
 	wg *sync.WaitGroup) {
 	st := state.NewState(l)
 	sth := state.NewStateHolder(st)
-	accounts := state.NewAccounts(sth)
+	accounts := sth.Accounts()
 	storage := cadenceRuntime.NewStorage(
 		&migrations.AccountsAtreeLedger{Accounts: accounts},
 		func(f func(), _ func(metrics cadenceRuntime.Metrics, duration time.Duration)) {

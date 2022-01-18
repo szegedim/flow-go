@@ -64,7 +64,7 @@ func NewTransactionEnvironment(
 	traceSpan opentracing.Span,
 ) *TransactionEnv {
 
-	accounts := state.NewAccounts(sth)
+	accounts := sth.Accounts()
 	generator := state.NewStateBoundAddressGenerator(sth, ctx.Chain)
 	uuidGenerator := state.NewUUIDGenerator(sth)
 	programsHandler := handler.NewProgramsHandler(programs, sth)

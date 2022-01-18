@@ -36,7 +36,7 @@ func (c *TransactionAccountFrozenChecker) checkAccountNotFrozen(
 	tx *flow.TransactionBody,
 	sth *state.StateHolder,
 ) error {
-	accounts := state.NewAccounts(sth)
+	accounts := sth.Accounts()
 
 	for _, authorizer := range tx.Authorizers {
 		err := accounts.CheckAccountNotFrozen(authorizer)

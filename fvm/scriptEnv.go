@@ -63,7 +63,7 @@ func NewScriptEnvironment(
 	programs *programs.Programs,
 ) *ScriptEnv {
 
-	accounts := state.NewAccounts(sth)
+	accounts := sth.Accounts()
 	uuidGenerator := state.NewUUIDGenerator(sth)
 	programsHandler := handler.NewProgramsHandler(programs, sth)
 	accountKeys := handler.NewAccountKeyHandler(accounts)

@@ -10,20 +10,30 @@ type StateHolder struct {
 	payerIsServiceAccount    bool
 	startState               *State
 	activeState              *State
+	accounts                 Accounts
 }
 
 // NewStateHolder constructs a new state manager
 func NewStateHolder(startState *State) *StateHolder {
-	return &StateHolder{
+	sh := &StateHolder{
 		enforceInteractionLimits: true,
 		startState:               startState,
 		activeState:              startState,
 	}
+	return sh
 }
 
 // State returns the active state
 func (s *StateHolder) State() *State {
 	return s.activeState
+}
+
+// Accounts returns accounts
+func (s *StateHolder) Accounts() Accounts {
+	if s.accounts == nil {
+		s.accounts = NewAccounts(s)
+	}
+	return s.accounts
 }
 
 // SetActiveState sets active state
@@ -51,8 +61,8 @@ func (s *StateHolder) DisableLimitEnforcement() {
 // this is basically a utility function for common
 // operations
 func (s *StateHolder) NewChild() *State {
-	new := s.activeState.NewChild()
-	s.activeState = new
+	c := s.activeState.NewChild()
+	s.activeState = c
 	return s.activeState
 }
 

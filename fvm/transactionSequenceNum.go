@@ -45,7 +45,7 @@ func (c *TransactionSequenceNumberChecker) checkAndIncrementSequenceNumber(
 		sth.SetActiveState(parentState)
 	}()
 
-	accounts := state.NewAccounts(sth)
+	accounts := sth.Accounts()
 	proposalKey := proc.Transaction.ProposalKey
 
 	accountKey, err := accounts.GetPublicKey(proposalKey.Address, proposalKey.KeyIndex)
