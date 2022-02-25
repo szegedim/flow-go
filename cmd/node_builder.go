@@ -134,7 +134,7 @@ type BaseConfig struct {
 	profilerDir                     string
 	profilerInterval                time.Duration
 	profilerDuration                time.Duration
-	tracerEnabled                   bool
+	TracerEnabled                   bool
 	tracerSensitivity               uint
 	metricsEnabled                  bool
 	guaranteesCacheSize             uint
@@ -214,7 +214,7 @@ func DefaultBaseConfig() *BaseConfig {
 		profilerDir:                     "profiler",
 		profilerInterval:                15 * time.Minute,
 		profilerDuration:                10 * time.Second,
-		tracerEnabled:                   false,
+		TracerEnabled:                   false,
 		tracerSensitivity:               4,
 		metricsEnabled:                  true,
 		receiptsCacheSize:               bstorage.DefaultCacheSize,
