@@ -74,7 +74,36 @@ func (c *Consensus) Identities(blockID flow.Identifier) (flow.IdentityList, erro
 }
 
 func (c *Consensus) IdentitiesByIndices(blockID flow.Identifier, indices []int) (flow.IdentityList, error) {
-	panic("to be implemented")
+	// TODO: the canonicalOrder can be cached and queried by block view
+	initial, err := c.state.AtBlockID(blockID).Epochs().Current().InitialIdentities()
+	if err != nil {
+		return nil, fmt.Errorf("could not find epoch initial identities: %w", err)
+	}
+
+	// the signer ID is determined by the signer index and the canonical order of the identities.
+	// the canonical order of the identities is the order of the consensus identities listed in the
+	// initial identities of the epoch
+	canonicalOrder := initial.Filter(filter.IsVotingConsensusCommitteeMember)
+
+	// we can't just return the identities from the initial identities, because the identity data might be
+	// stale, for instance, node stake might be changed due to slashing, we need to return the identities that contains the latest
+	// state at the given block.
+	nodeIDs := make([]flow.Identifier, 0, len(indices))
+	for _, index := range indices {
+		if index < 0 || index >= len(canonicalOrder) {
+			return nil, model.NewInvalidSignerErrorf("signer index %v is out of range in a %v members committee", index, len(canonicalOrder))
+		}
+
+		id := initial[index]
+		nodeIDs = append(nodeIDs, id.NodeID)
+	}
+
+	identities, err := c.state.AtBlockID(blockID).Identities(filter.HasNodeID(nodeIDs...))
+	if err != nil {
+		return nil, fmt.Errorf("could not find signer ID: %w", err)
+	}
+
+	return identities, nil
 }
 
 func (c *Consensus) Identity(blockID flow.Identifier, nodeID flow.Identifier) (*flow.Identity, error) {
