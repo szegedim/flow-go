@@ -58,7 +58,7 @@ require (
 	github.com/multiformats/go-multiaddr-dns v0.3.1
 	github.com/multiformats/go-multihash v0.1.0
 	github.com/onflow/atree v0.1.2-0.20220215140047-82a5e53e8248
-	github.com/onflow/cadence v0.21.2-0.20220225230213-427c329b208b
+	github.com/onflow/cadence v0.21.4-0.20220302165621-a80b27e3e950
 	github.com/onflow/flow v0.2.3-0.20220207221328-d1ffd1c3053e
 	github.com/onflow/flow-core-contracts/lib/go/contracts v0.10.1
 	github.com/onflow/flow-core-contracts/lib/go/templates v0.10.1
@@ -71,6 +71,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/psiemens/sconfig v0.1.0 // indirect
+	github.com/rivo/uniseg v0.2.1-0.20211004051800-57c86be7915a // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/rs/cors v1.8.0
 	github.com/rs/zerolog v1.19.0
@@ -82,6 +83,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.1-0.20210824115523-ab6dc3262822
+	github.com/turbolent/prettier v0.0.0-20210613180524-3a3f5a5b49ba // indirect
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
 	github.com/uber/jaeger-lib v2.4.0+incompatible // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
