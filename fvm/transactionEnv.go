@@ -629,10 +629,6 @@ func (e *TransactionEnv) VerifySignature(
 	return valid, nil
 }
 
-func (e *TransactionEnv) ValidatePublicKey(pk *runtime.PublicKey) (bool, error) {
-	return crypto.ValidatePublicKey(pk.SignAlgo, pk.PublicKey)
-}
-
 // Block Environment Functions
 
 // GetCurrentBlockHeight returns the current block height.
@@ -961,4 +957,27 @@ func (e *TransactionEnv) Commit() ([]programs.ContractUpdateKey, error) {
 		return nil, err
 	}
 	return e.contracts.Commit()
+}
+
+func (e *TransactionEnv) ValidatePublicKey(pk *runtime.PublicKey) error {
+	valid, err := crypto.ValidatePublicKey(pk.SignAlgo, pk.PublicKey)
+	if err != nil {
+		return err
+	}
+	if !valid {
+		return errors.NewValueErrorf("TODO", "invalid key")
+	}
+	return nil
+}
+
+func (e *TransactionEnv) BLSVerifyPOP(pk *runtime.PublicKey, s []byte) (bool, error) {
+	return false, nil
+}
+
+func (e *TransactionEnv) BLSAggregateSignatures(sigs [][]byte) ([]byte, error) {
+	return nil, nil
+}
+
+func (e *TransactionEnv) BLSAggregatePublicKeys(keys []*runtime.PublicKey) (*runtime.PublicKey, error) {
+	return nil, nil
 }
