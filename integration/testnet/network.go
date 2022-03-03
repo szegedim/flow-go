@@ -700,6 +700,7 @@ func (net *FlowNetwork) addConsensusFollower(t *testing.T, rootProtocolSnapshotP
 // AddNode creates a node container with the given config and adds it to the
 // network.
 func (net *FlowNetwork) AddNode(t *testing.T, bootstrapDir string, nodeConf ContainerConfig) error {
+	profilerDir := "/profiler"
 	opts := &testingdock.ContainerOpts{
 		ForcePull: false,
 		Name:      nodeConf.ContainerName,
@@ -711,6 +712,7 @@ func (net *FlowNetwork) AddNode(t *testing.T, bootstrapDir string, nodeConf Cont
 				fmt.Sprintf("--nodeid=%s", nodeConf.NodeID.String()),
 				fmt.Sprintf("--bootstrapdir=%s", DefaultBootstrapDir),
 				fmt.Sprintf("--datadir=%s", DefaultFlowDBDir),
+				fmt.Sprintf("--profile-dir", profilerDir),
 				fmt.Sprintf("--secretsdir=%s", DefaultFlowSecretsDBDir),
 				fmt.Sprintf("--loglevel=%s", nodeConf.LogLevel.String()),
 			}, nodeConf.AdditionalFlags...),
@@ -739,6 +741,10 @@ func (net *FlowNetwork) AddNode(t *testing.T, bootstrapDir string, nodeConf Cont
 	// create a directory for the node database
 	flowDataDir := filepath.Join(tmpdir, DefaultFlowDataDir)
 	err = os.Mkdir(flowDataDir, 0700)
+	require.NoError(t, err)
+
+	flowProfilerDir := filepath.Join(tmpdir, profilerDir)
+	err = os.Mkdir(flowDataDir, 0755)
 	require.NoError(t, err)
 
 	// create a directory for the bootstrap files
